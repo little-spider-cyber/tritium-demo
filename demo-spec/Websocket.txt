@@ -1,0 +1,27 @@
+Websocket 使用说明
+
+Source：wss://web-t.pinkpunk.io/ws 这是一个公开的ws推数据源，任何人都可以订阅
+
+订阅trending数据
+{    "topic": "trending",    "event": "sub",    "interval": "",    "pair": "",    "chainId": "56",    "compression": 0}第一次返回{"msg":"success","code":"200","t":1755852772402,"data":[{"baseDecimals":18,"baseName":"VELO","baseSupply":30000000000000000000000000000,"baseSymbol":"VELO","baseToken":"0xf486ad071f3bee968384d2e39e2d8af0fcf6fd46","buyCount24h":27498,"chainId":"56","count24h":55524,"dex":"PancakeSwapV3","info":"{"twitter":"","website":"","telegram":""}","liquidity":1133024.95,"marketCap":446056036.33,"pair":"0x258474cd00b4f42842ed424e6c2c1da0087031b8","price":0.01486,"priceChange1h":0.0020229265,"priceChange1m":0.0006734007,"priceChange24h":-0.0456005138,"priceChange5m":-0.0013440860,"priceNative":0.00001745,"priceUsd":0.01486,"quoteName":"USD Coin","quoteSymbol":"USDC","quoteToken":"0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d","sellCount24h":28026,"timeDiff":"","volumeUsd24h":9303485.818930020645027},{"baseDecimals":6,"baseName":"Roam Token","baseSupply":1000000,"baseSymbol":"ROAM","baseToken":"0x3fefe29da25bea166fb5f6ade7b5976d2b0e586b","buyCount24h":1535,"chainId":"56","count24h":3206,"dex":"PancakeSwapV3","info":"{"twitter":"","website":"https://www.weroam.xyz/","telegram":""}","liquidity":790082.27,"marketCap":0.07983,"pair":"0x30d59a44930b3994c116846efe55fc8fcf608aa8","price":0.08002,"priceChange1h":0.0419270833,"priceChange1m":0.0167725540,"priceChange24h":0.1109260031,"priceChange5m":0.0201427843,"priceNative":0.00009394,"priceUsd":0.08002,"quoteName":"Tether USD","quoteSymbol":"USDT","quoteToken":"0x55d398326f99059ff775485246999027b3197955","sellCount24h":1671,"timeDiff":"","volumeUsd24h":9139035.3648423205}],"chainId":"56","topic":"trending","interval":"","compression":0,"event":"sub","pair":""}
+订阅成功之后返回{"data":[{"baseDecimals":18,"volumeUsd24h":447507835389.94,"quoteToken":"0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c","liquidity":5184.3829,"baseSymbol":"Wiki Cat","timeDiff":"","dex":"FourMemeV2","price":128229604.52,"baseName":"Wiki Cat","info":"{"twitter":"","website":"","telegram":""}","marketCap":6665.2828,"priceUsd":109158947751.24,"count24h":33,"priceNative":128229604.52,"sellCount24h":26,"priceChange1m":0,"priceChange5m":-0.0050888585,"priceChange1h":-0.0050888585,"pair":"0xdd6eeb2e46220899c8a4b7f6a0e9d49d45bd4444","baseSupply":1000000000000000000000000000,"chainId":"56","baseToken":"0xdd6eeb2e46220899c8a4b7f6a0e9d49d45bd4444","priceChange24h":-0.1768753419,"buyCount24h":7,"quoteName":"Wrapped BNB”,"quoteSymbol":"WBNB"}],"topic":"trending","compression":0,"pair":""}
+
+你会发现接口返回的数据源是乱码，是因为数据传输经过编码，需要在前端进行解码才能使用，以下是解码方法，需要借助 pako 这个第三方库
+
+    decompressData(compressedString: string) {
+        // 1. 将 ISO-8859-1 字符串解码为字节数组
+        const byteArray = new Uint8Array(compressedString.length);
+        for (let i = 0; i < compressedString.length; i++) {
+            byteArray[i] = compressedString.charCodeAt(i) & 0xFF; // 取低8位
+        }
+
+        // 2. GZIP 解压字节数据
+        const decompressedData = pako.inflate(byteArray);
+
+        // 3. 将解压后的字节数组转为 UTF-8 字符串
+        return new TextDecoder('utf-8').decode(decompressedData);
+    }
+
+
+你会需要对 ping message 回传 pong 以维持心跳连接
+{"topic":"pong","event":"sub","pong":"1762871018290","interval":"","pair":"","chainId":"","compression":1}

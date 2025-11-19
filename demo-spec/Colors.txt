@@ -1,0 +1,8 @@
+rgba(255, 255, 255, 1) Primary text color
+rgba(255, 255, 255, 0.4) Secondary text color
+rgba(238, 171, 189, 1) Primary pink color
+rgba(244, 188, 204, 1) Row hovered color
+rgba(70, 193, 127, 1) Upside color
+rgba(229, 56, 56, 1)  Downside color
+rgba(0, 0, 0, 1) Background color
+rgba(60, 43, 47, 1) Border color
