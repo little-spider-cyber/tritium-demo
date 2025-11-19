@@ -10,6 +10,7 @@ export const useTokenWebSocket = () => {
   const [error, setError] = useState<string | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const reconnectCountRef = useRef<number>(0);
 
   const decompressData = (compressedString: string): string | null => {
     try {
@@ -34,11 +35,11 @@ export const useTokenWebSocket = () => {
     // Handle Ping/Pong
     // Assuming the server sends a message with topic 'ping' or we need to keep alive
     // The documentation says: "You will need to reply pong to ping message"
-    if (message.topic === 'ping') {
+    if ("ping" in message) {
       const pongMsg = {
         topic: "pong",
         event: "sub",
-        pong: Date.now().toString(),
+        pong: message.ping || Date.now().toString(), // Use received ping TS if available
         interval: "",
         pair: "",
         chainId: "",
@@ -48,7 +49,7 @@ export const useTokenWebSocket = () => {
       return;
     }
 
-    if (message.topic === 'trending' && message.data) {
+    if ("topic" in message && message.topic === 'trending' && message.data) {
       // Parse info string to object if necessary
       const processedData = message.data.map(item => {
         let parsedInfo: TokenInfo | string = item.info;
@@ -80,9 +81,9 @@ export const useTokenWebSocket = () => {
     wsRef.current = ws;
 
     ws.onopen = () => {
-      console.log('WebSocket connected');
       setIsConnected(true);
       setError(null);
+      reconnectCountRef.current = 0;
       
       // Subscribe
       const subMsg = {
@@ -98,7 +99,6 @@ export const useTokenWebSocket = () => {
 
     ws.onmessage = (event) => {
       const messageData = event.data;
-      // console.log('Raw message received:', messageData instanceof Blob ? 'Blob' : typeof messageData); // Debug log
       
       if (typeof messageData === 'string') {
         let parsed: WebSocketMessage | null = null;
@@ -112,12 +112,11 @@ export const useTokenWebSocket = () => {
             if (decompressed) {
                 try {
                     parsed = JSON.parse(decompressed);
-                    // console.log('Decompressed message:', parsed); // Debug log
                 } catch (jsonErr) {
                     console.error('JSON parse error after decompression:', jsonErr);
                 }
             } else {
-                 // console.log('Failed to decompress or not compressed');
+                 console.warn('Failed to decompress or not compressed');
             }
         }
 
@@ -125,33 +124,25 @@ export const useTokenWebSocket = () => {
             handleMessage(parsed);
         }
       } else if (messageData instanceof Blob) {
-         // Handle Blob if necessary (though the code currently expects string)
-         const reader = new FileReader();
-         reader.onload = () => {
-             const text = reader.result as string;
-             // Try decompressing the blob content if it was read as text
-             // But pako.inflate expects Uint8Array usually. 
-             // If it's a binary blob, we should readAsArrayBuffer
-         };
-         // For now just log
-         console.log('Received Blob data, handling not implemented');
+         console.warn('Received Blob data, handling not implemented');
       }
     };
 
     ws.onclose = () => {
-      console.log('WebSocket disconnected');
       setIsConnected(false);
       wsRef.current = null;
-      // Reconnect after delay
+      // Exponential Backoff Reconnect
+      const delay = Math.min(1000 * (2 ** (reconnectCountRef.current)), 30000); // Max 30s
+      reconnectCountRef.current += 1;
+      
       reconnectTimeoutRef.current = setTimeout(() => {
         connect();
-      }, 3000);
+      }, delay);
     };
 
     ws.onerror = (err) => {
       console.error('WebSocket error:', err);
       setError('WebSocket connection error');
-      // ws.close() will trigger onclose which handles reconnect
     };
 
   }, [handleMessage]);
