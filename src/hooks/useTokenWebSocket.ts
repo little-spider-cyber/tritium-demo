@@ -33,8 +33,6 @@ export const useTokenWebSocket = () => {
 
   const handleMessage = useCallback((message: WebSocketMessage) => {
     // Handle Ping/Pong
-    // Assuming the server sends a message with topic 'ping' or we need to keep alive
-    // The documentation says: "You will need to reply pong to ping message"
     if ("ping" in message) {
       const pongMsg = {
         topic: "pong",
@@ -141,7 +139,7 @@ export const useTokenWebSocket = () => {
     };
 
     ws.onerror = (err) => {
-      console.error('WebSocket error:', err);
+      console.warn('WebSocket error:', err);
       setError('WebSocket connection error');
     };
 
@@ -161,4 +159,3 @@ export const useTokenWebSocket = () => {
 
   return { data, isConnected, error };
 };
-

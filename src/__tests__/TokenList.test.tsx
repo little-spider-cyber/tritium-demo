@@ -16,15 +16,15 @@ jest.mock('@tanstack/react-virtual', () => ({
 
 // Mock icons
 jest.mock('../components/icons/SearchIcon', () => ({
-    SearchIcon: () => <div data-testid="search-icon" />
+  SearchIcon: () => <div data-testid="search-icon" />
 }));
 jest.mock('../components/icons/SortIcon', () => ({
-    SortIcon: () => <div data-testid="sort-icon" />
+  SortIcon: ({ sortState }: { sortState: string }) => <div data-testid="sort-icon" data-sort={sortState} />
 }));
 
 // Mock LoadingSkeleton
 jest.mock('../components/LoadingSkeleton', () => ({
-    LoadingSkeleton: () => <div data-testid="loading-skeleton">Loading Skeleton...</div>
+  LoadingSkeleton: () => <div data-testid="loading-skeleton">Loading Skeleton...</div>
 }));
 
 const mockUseTokenWebSocket = useTokenWebSocket as jest.Mock;
@@ -42,22 +42,22 @@ describe('TokenList Component', () => {
     });
 
     render(<TokenList />);
-    
+
     expect(screen.getByTestId('loading-skeleton')).toBeInTheDocument();
   });
 
   it('should render token list when data is available', async () => {
-     // Setup virtualizer mock to return items
-     const { useVirtualizer } = require('@tanstack/react-virtual');
-     useVirtualizer.mockReturnValue({
-        getTotalSize: () => 50,
-        getVirtualItems: () => [{
-            index: 0,
-            start: 0,
-            size: 50,
-            key: '0'
-        }]
-     });
+    // Setup virtualizer mock to return items
+    const { useVirtualizer } = require('@tanstack/react-virtual');
+    useVirtualizer.mockReturnValue({
+      getTotalSize: () => 50,
+      getVirtualItems: () => [{
+        index: 0,
+        start: 0,
+        size: 50,
+        key: '0'
+      }]
+    });
 
     const mockData = [
       {
@@ -87,11 +87,11 @@ describe('TokenList Component', () => {
   });
 
   it('should handle error state', () => {
-     const { useVirtualizer } = require('@tanstack/react-virtual');
-     useVirtualizer.mockReturnValue({
-        getTotalSize: () => 0,
-        getVirtualItems: () => []
-     });
+    const { useVirtualizer } = require('@tanstack/react-virtual');
+    useVirtualizer.mockReturnValue({
+      getTotalSize: () => 0,
+      getVirtualItems: () => []
+    });
 
     mockUseTokenWebSocket.mockReturnValue({
       data: [],
@@ -100,16 +100,16 @@ describe('TokenList Component', () => {
     });
 
     render(<TokenList />);
-    
+
     expect(screen.getByText('Error: Connection failed')).toBeInTheDocument();
   });
 
   it('should filter tokens when searching', async () => {
     const { useVirtualizer } = require('@tanstack/react-virtual');
-     useVirtualizer.mockReturnValue({
-        getTotalSize: () => 0,
-        getVirtualItems: () => []
-     });
+    useVirtualizer.mockReturnValue({
+      getTotalSize: () => 0,
+      getVirtualItems: () => []
+    });
 
     mockUseTokenWebSocket.mockReturnValue({
       data: [{ baseSymbol: 'TEST' }], // Provide data to bypass skeleton
@@ -118,10 +118,10 @@ describe('TokenList Component', () => {
     });
 
     render(<TokenList />);
-    
+
     const searchInput = screen.getByPlaceholderText('Search tokens...');
     fireEvent.change(searchInput, { target: { value: 'ETH' } });
-    
+
     expect(searchInput).toHaveValue('ETH');
   });
 });

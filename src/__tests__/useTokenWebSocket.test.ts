@@ -123,7 +123,7 @@ describe('useTokenWebSocket', () => {
 
     await act(async () => {
       mockWebSocket.onmessage({ 
-          data: JSON.stringify({ topic: 'ping' }) 
+          data: JSON.stringify({ "ping": "1234567890" }) 
       });
     });
 
