@@ -1,8 +1,17 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #000000;
+  --foreground: #ffffff;
+  
+  /* Custom Colors from Colors.txt */
+  --color-text-primary: rgba(255, 255, 255, 1);
+  --color-text-secondary: rgba(255, 255, 255, 0.4);
+  --color-primary-pink: rgba(238, 171, 189, 1);
+  --color-row-hover: rgba(244, 188, 204, 1); /* Note: This might be too bright for background, maybe opacity needed or it's for text? Assuming bg for now based on name */
+  --color-upside: rgba(70, 193, 127, 1);
+  --color-downside: rgba(229, 56, 56, 1);
+  --color-border-custom: rgba(60, 43, 47, 1);
 }
 
 @theme inline {
@@ -10,13 +19,15 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  /* Extend colors */
+  --color-text-primary: var(--color-text-primary);
+  --color-text-secondary: var(--color-text-secondary);
+  --color-primary-pink: var(--color-primary-pink);
+  --color-row-hover: var(--color-row-hover);
+  --color-upside: var(--color-upside);
+  --color-downside: var(--color-downside);
+  --color-border-custom: var(--color-border-custom);
 }
 
 body {

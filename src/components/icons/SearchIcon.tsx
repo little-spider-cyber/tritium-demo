@@ -1,0 +1,20 @@
+import React from 'react';
+
+export const SearchIcon = (props: React.SVGProps<SVGSVGElement>) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 11 11" {...props}>
+        <defs>
+            <style>{`.a,.b,.c{fill:none;}.b,.c{stroke:#fff;stroke-width:0.8px;}.b{stroke-linecap:round;}.d{stroke:none;}`}</style>
+        </defs>
+        <g transform="translate(-137 -176)">
+            <rect className="a" width="11" height="11" transform="translate(137 176)" />
+            <g transform="translate(-116 1)">
+                <path className="b" d="M9314.106-12304l2.738,2.736" transform="translate(-9053.693 12486.413)" />
+                <g className="c" transform="translate(253 175)">
+                    <circle className="d" cx="4.378" cy="4.378" r="4.378" />
+                    <circle className="a" cx="4.378" cy="4.378" r="3.978" />
+                </g>
+            </g>
+        </g>
+    </svg>
+);
+
