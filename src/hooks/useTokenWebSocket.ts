@@ -2,6 +2,7 @@ import { useEffect, useState, useRef, useCallback } from 'react';
 import pako from 'pako';
 import { TokenData, WebSocketMessage, TokenInfo } from '../types/token';
 
+// 因为是公开的就不通过配置文件注入了，直接写死。
 const WS_URL = 'wss://web-t.pinkpunk.io/ws';
 
 export const useTokenWebSocket = () => {
