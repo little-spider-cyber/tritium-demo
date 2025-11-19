@@ -25,22 +25,27 @@ export const TokenList = () => {
     const [sorting, setSorting] = useState<SortingState>([]);
     const [globalFilter, setGlobalFilter] = useState('');
     const tableContainerRef = useRef<HTMLDivElement>(null);
-    const [showSkeleton, setShowSkeleton] = useState(true);
+    const [showMarketCap, setShowMarketCap] = useState(false);
 
-    // Effect to handle skeleton loading state
-    // Show skeleton on initial load until we have data or a connection error
-    // Or if we are connected but waiting for the first message
-    useMemo(() => {
-        if (data.length > 0 || error) {
-            setShowSkeleton(false);
-        }
-    }, [data, error]);
+    const handleShowMarketCapChange = () => {
+
+        setShowMarketCap(!showMarketCap);
+        setSorting(currentSorting => {
+            const dynamicColumnId = showMarketCap ? 'marketCap' : 'liquidity';
+            const isSortingByDynamic = currentSorting.some(s => s.id === dynamicColumnId);
+            if (isSortingByDynamic) {
+                const newId = !showMarketCap ? 'marketCap' : 'liquidity';
+                return currentSorting.map(s => s.id === dynamicColumnId ? { ...s, id: newId } : s);
+            }
+            return currentSorting;
+        });
+    };
 
     const columns = useMemo(
         () => [
             columnHelper.accessor('baseSymbol', {
                 header: 'Token',
-                size: 200,
+                size: 250,
                 cell: (info) => (
                     <div className="flex items-center gap-2">
                         <div className="flex flex-col">
@@ -52,12 +57,36 @@ export const TokenList = () => {
             }),
             columnHelper.accessor('priceUsd', {
                 header: 'Price',
-                size: 120,
+                size: 150,
                 cell: (info) => <span className="text-text-primary">{formatCurrency(info.getValue())}</span>,
             }),
+            columnHelper.accessor('priceChange1m', {
+                header: '1m',
+                size: 100,
+                cell: (info) => {
+                    const val = info.getValue();
+                    return (
+                        <span className={val >= 0 ? 'text-upside' : 'text-downside'}>
+                            {val > 0 ? '+' : ''}{formatPercentage(val)}
+                        </span>
+                    );
+                },
+            }),
+            columnHelper.accessor('priceChange5m', {
+                header: '5m',
+                size: 100,
+                cell: (info) => {
+                    const val = info.getValue();
+                    return (
+                        <span className={val >= 0 ? 'text-upside' : 'text-downside'}>
+                            {val > 0 ? '+' : ''}{formatPercentage(val)}
+                        </span>
+                    );
+                },
+            }),
             columnHelper.accessor('priceChange1h', {
-                header: '1h Change',
-                size: 120,
+                header: '1h',
+                size: 100,
                 cell: (info) => {
                     const val = info.getValue();
                     return (
@@ -68,8 +97,8 @@ export const TokenList = () => {
                 },
             }),
             columnHelper.accessor('priceChange24h', {
-                header: '24h Change',
-                size: 120,
+                header: '24h',
+                size: 100,
                 cell: (info) => {
                     const val = info.getValue();
                     return (
@@ -79,18 +108,26 @@ export const TokenList = () => {
                     );
                 },
             }),
-            columnHelper.accessor('volumeUsd24h', {
-                header: '24h Volume',
-                size: 150,
-                cell: (info) => <span className="text-text-primary">${formatCompactNumber(info.getValue())}</span>,
-            }),
-            columnHelper.accessor('marketCap', {
-                header: 'Market Cap',
-                size: 150,
-                cell: (info) => <span className="text-text-primary">${formatCompactNumber(info.getValue())}</span>,
+            columnHelper.accessor(row => showMarketCap ? row.marketCap : row.liquidity, {
+                id: showMarketCap ? 'marketCap' : 'liquidity',
+                header: () => (
+                    <div className="flex items-center gap-1 cursor-pointer select-none" onClick={(e) => {
+                        e.stopPropagation();
+                        handleShowMarketCapChange();
+                    }}>
+                        <span className={!showMarketCap ? "text-text-primary" : "text-text-secondary"}>Liq</span>
+                        <span className="text-text-secondary">/</span>
+                        <span className={showMarketCap ? "text-text-primary" : "text-text-secondary"}>MC</span>
+                    </div>
+                ),
+                enableSorting: true,
+                size: 180,
+                cell: (info) => {
+                    return <span className="text-text-primary">${formatCompactNumber(info.getValue())}</span>;
+                },
             }),
         ],
-        []
+        [showMarketCap]
     );
 
     const table = useReactTable({
@@ -112,16 +149,16 @@ export const TokenList = () => {
     const rowVirtualizer = useVirtualizer({
         count: rows.length,
         getScrollElement: () => tableContainerRef.current,
-        estimateSize: () => 73, // Estimated row height based on CSS (py-4 + content)
+        estimateSize: () => 73,
         overscan: 10,
     });
 
-    if (showSkeleton) {
+    if (!isConnected && data.length === 0 && !error) {
         return <LoadingSkeleton />;
     }
 
     return (
-        <div className="w-full max-w-6xl mx-auto p-6 bg-black h-screen flex flex-col text-text-primary">
+        <div className="w-full h-screen flex flex-col text-text-primary bg-black p-6">
             <div className="flex justify-between items-center mb-6 flex-none">
                 <h1 className="text-2xl font-bold text-text-primary">Trending Tokens</h1>
                 <div className="relative">
@@ -138,32 +175,31 @@ export const TokenList = () => {
                 </div>
             </div>
 
-            {!isConnected && data.length === 0 && (
-                <div className="text-center py-10 text-text-secondary flex-none">Connecting to WebSocket...</div>
-            )}
-
             {error && (
                 <div className="text-center py-10 text-downside flex-none">Error: {error}</div>
             )}
 
             <div
-                className="overflow-y-auto border border-border-custom rounded-lg flex-1"
+                className="overflow-y-auto border border-border-custom rounded-lg flex-1 w-full"
                 ref={tableContainerRef}
             >
-                <table className="w-full border-collapse relative">
+                <table className="w-full table-fixed border-collapse relative">
                     <thead className="sticky top-0 z-10 bg-black border-b border-border-custom">
                         {table.getHeaderGroups().map((headerGroup) => (
-                            <tr key={headerGroup.id}>
+                            <tr key={headerGroup.id} className="flex w-full">
                                 {headerGroup.headers.map((header) => (
                                     <th
                                         key={header.id}
-                                        className="py-4 px-4 text-left text-text-secondary font-medium cursor-pointer select-none hover:text-text-primary transition-colors"
+                                        className="py-4 px-4 text-left text-text-secondary font-medium cursor-pointer select-none hover:text-text-primary transition-colors flex items-center"
                                         onClick={header.column.getToggleSortingHandler()}
-                                        style={{ width: header.getSize() }}
+                                        style={{ width: `${header.getSize()}px`, flex: `0 0 ${header.getSize()}px` }}
                                     >
-                                        <div className="flex items-center gap-1">
+                                        <div className="flex items-center gap-1 w-full">
                                             {flexRender(header.column.columnDef.header, header.getContext())}
-                                            <SortIcon className={`w-2 h-3 ${header.column.getIsSorted() ? 'opacity-100' : 'opacity-40'}`} />
+                                            <SortIcon
+                                                className="w-2 h-3 ml-1"
+                                                sortState={header.column.getIsSorted()}
+                                            />
                                         </div>
                                     </th>
                                 ))}
@@ -174,6 +210,7 @@ export const TokenList = () => {
                         style={{
                             height: `${rowVirtualizer.getTotalSize()}px`,
                             position: 'relative',
+                            display: 'block'
                         }}
                     >
                         {rowVirtualizer.getVirtualItems().map((virtualRow) => {
@@ -181,27 +218,24 @@ export const TokenList = () => {
                             return (
                                 <tr
                                     key={row.id}
-                                    className="border-b border-border-custom hover:bg-row-hover/10 transition-colors group absolute w-full"
+                                    className="border-b border-border-custom hover:bg-row-hover/10 transition-colors group absolute top-0 left-0 flex w-full items-center"
                                     style={{
                                         height: `${virtualRow.size}px`,
                                         transform: `translateY(${virtualRow.start}px)`,
                                     }}
                                 >
                                     {row.getVisibleCells().map((cell) => (
-                                        <td key={cell.id} className="py-4 px-4" style={{ width: cell.column.getSize() }}>
+                                        <td
+                                            key={cell.id}
+                                            className="py-4 px-4 overflow-hidden text-ellipsis whitespace-nowrap"
+                                            style={{ width: `${cell.column.getSize()}px`, flex: `0 0 ${cell.column.getSize()}px` }}
+                                        >
                                             {flexRender(cell.column.columnDef.cell, cell.getContext())}
                                         </td>
                                     ))}
                                 </tr>
                             );
                         })}
-                        {data.length === 0 && isConnected && (
-                            <tr className="absolute w-full">
-                                <td colSpan={columns.length} className="py-10 text-center text-text-secondary">
-                                    Waiting for data...
-                                </td>
-                            </tr>
-                        )}
                     </tbody>
                 </table>
             </div>

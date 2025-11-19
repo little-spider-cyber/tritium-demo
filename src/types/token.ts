@@ -20,9 +20,9 @@ export interface TokenData {
   pair: string;
   price: number;
   priceChange1h: number;
-  priceChange1m: number;
+  priceChange1m: number; // Added
+  priceChange5m: number; // Added
   priceChange24h: number;
-  priceChange5m: number;
   priceNative: number;
   priceUsd: number;
   quoteName: string;
@@ -33,7 +33,7 @@ export interface TokenData {
   volumeUsd24h: number;
 }
 
-export interface WebSocketMessage {
+export type WebSocketMessage = {
   msg?: string;
   code?: string;
   t?: number;
@@ -45,5 +45,7 @@ export interface WebSocketMessage {
   event?: string;
   pair?: string;
   pong?: string; // For pong messages
+} | {
+  ping?: string; // For ping messages
 }
 
